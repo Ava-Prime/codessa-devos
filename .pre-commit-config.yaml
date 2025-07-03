@@ -1,19 +1,101 @@
-name: pre-commit
-on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+# ==================================================================================
+# Pre-Commit Configuration for Codessa DevOS
+#
+# This file defines the series of checks that run automatically before each commit.
+# It helps maintain code quality, style, and consistency across the project.
+#
+# To enable, run:
+#   pip install pre-commit
+#   pre-commit install
+# ==================================================================================
 
-jobs:
-  pre-commit:
-    runs-on: ubuntu-latest
+# The 'ci' block configures global settings for pre-commit.ci service if used.
+ci:
+    autofix_commit_msg: "style: [pre-commit.ci] auto-fixes from pre-commit.com hooks"
+    autoupdate_commit_msg: "chore: [pre-commit.ci] pre-commit autoupdate"
+
+repos:
+# ==================================================================================
+# Section 1: General-Purpose File Fixers
+# These hooks handle basic file hygiene like whitespace and file endings.
+# ==================================================================================
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+    -   id: trailing-whitespace         # Trims trailing whitespace.
+    -   id: end-of-file-fixer           # Ensures files end in a newline.
+    -   id: check-yaml                  # Checks YAML files for parseable syntax.
+    -   id: check-json                  # Checks JSON files for parseable syntax.
+    -   id: check-toml                  # Checks TOML files for parseable syntax.
+    -   id: check-added-large-files     # Prevents committing large files.
+    -   id: detect-private-key          # Prevents committing private keys.
+
+# ==================================================================================
+# Section 2: Python Code Formatting
+# These hooks automatically format Python code to a consistent style.
+# ==================================================================================
+-   repo: https://github.com/psf/black
+    rev: 24.2.0
+    hooks:
+    -   id: black                       # The uncompromising Python code formatter.
+
+-   repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+    -   id: isort                       # Sorts imports automatically.
+        name: isort (python)
+
+# ==================================================================================
+# Section 3: Other Language Formatting (e.g., JS, Markdown, YAML)
+# Prettier is an excellent formatter for many non-Python file types.
+# ==================================================================================
+-   repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v3.1.0
+    hooks:
+    -   id: prettier
+        # Specify file types to avoid conflicts with Python formatters
+        types_or: [javascript, typescript, markdown, yaml, html, css, scss]
+
+# ==================================================================================
+# Section 4: Python Linting & Type Checking
+# These hooks analyze code for potential errors, bugs, and style issues.
+# ==================================================================================
+-   repo: https://github.com/pycqa/flake8
+    rev: 7.0.0
+    hooks:
+    -   id: flake8                      # Fast, classic linter for style and complexity.
+
+-   repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.8.0
+    hooks:
+    -   id: mypy
+        # You may need to add 'args' if your project has special requirements.
+        # args: [--config-file=mypy.ini]
+        additional_dependencies: [ types-requests ] # Add any 'types-*' packages here
+# ==================================================================================
+# End of pre-commit configuration
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.x'
-      - name: Install pre-commit
-        run: pip install pre-commit
-      - name: Run pre-commit
-        run: pre-commit run --all-files
+       - name: Checkout Code
+         uses: actions/checkout@v4
+
+       - name: Set up Python
+         uses: actions/setup-python@v4
+         with:
+           python-version: 3.11
+
+       - name: Install Dependencies
+         run: |
+           python -m pip install --upgrade pip
+           pip install -r requirements-dev.txt
+         - name: Run Tests  
+           python -m pytest -v       - name: Run Pre-commit Checks
+         run: |
+           pre-commit run --all-files
+         - name: Cache Dependencies
+           uses: actions/cache@v3
+           with:
+             path: ~/.cache/pip
+             key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements-dev.txt') }}
+             restore-keys: |
+               ${{ runner.os }}-pip-
+        

@@ -1,65 +1,99 @@
+# ==================================================================================
+# Codessa DevOS - Continuous Deployment to Google Cloud Run
+#
+# This workflow automates building a Docker container, pushing it to Google
+# Artifact Registry, and deploying it as a new revision to Google Cloud Run.
+#
+# Key Features:
+# - Secure Authentication: Uses Workload Identity Federation, the recommended
+#   method for keyless authentication to Google Cloud.
+# - Efficient Deployment: Leverages the official 'deploy-cloudrun' action, which
+#   handles building, pushing, and deploying in one optimized step.
+# - Best Practices:
+#   - Pushes to Artifact Registry (the successor to GCR).
+#   - Tags images with the Git commit SHA for traceability and easy rollbacks.
+#   - Uses GitHub Environments for managing deployment-specific secrets and rules.
+# - Configurable: Key settings are managed as environment variables for easy updates.
+# ==================================================================================
+
 name: Deploy to Cloud Run
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
+
+# Environment variables available to all jobs.
+# REQUIRED: Update these placeholders with your actual GCP configuration.
+env:
+  GCP_PROJECT_ID: your-gcp-project-id  # <-- Replace with your Project ID
+  GCP_REGION: us-central1              # <-- Replace with your Cloud Run region
+  SERVICE_NAME: codessa-devos          # The name of your Cloud Run service
+  # The location for Artifact Registry. e.g., us-central1-docker, europe-west1-docker
+  GAR_LOCATION: us-central1-docker
 
 jobs:
   build-and-deploy:
+    name: Build and Deploy to Cloud Run
     runs-on: ubuntu-latest
+
+    # Use GitHub Environments to control deployments and store secrets
+    # Ensure 'Production' is defined in your repository's Environments settings
+    environment: Production
+
+    # Add permissions for Workload Identity Federation
+    permissions:
+      contents: 'read'
+      id-token: 'write'
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      - name: Set up Google Cloud SDK
-        uses: google-github-actions/setup-gcloud@v1
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: 'google-github-actions/auth@v2'
         with:
-          service_account_key: ${{ secrets.GCP_SA_KEY }}
-          project_id: your-gcp-project-id
+          # REQUIRED: Configure Workload Identity Federation in GCP and create a secret
+          # in GitHub (e.g., GCP_WORKLOAD_IDENTITY_PROVIDER) with the provider name.
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          # Make sure the secret 'GCP_WORKLOAD_IDENTITY_PROVIDER' exists in your repository or environment.
 
-      - name: Configure Docker for GCR
-        run: gcloud auth configure-docker
+          # REQUIRED: The email of the service account to impersonate. Create a secret
+          # in GitHub (e.g., GCP_SERVICE_ACCOUNT) with this value.
+          # Example: github-actions-runner@your-project-id.iam.gserviceaccount.com
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          # Make sure the secret 'GCP_SERVICE_ACCOUNT' exists in your repository or environment.
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
-      - name: Build Docker Image
-        run: |
-          docker build -t gcr.io/your-gcp-project-id/codessa-devos:latest .
+      - name: Build and Deploy to Cloud Run
+        id: deploy
+        uses: 'google-github-actions/deploy-cloudrun@v2'
+        with:
+          service: ${{ env.SERVICE_NAME }}
+          region: ${{ env.GCP_REGION }}
+          # The image name to build and push to Google Artifact Registry.
+          # The repository (e.g., 'codessa-devos') must exist in GAR.
+          image: ${{ env.GAR_LOCATION }}.pkg.dev/${{ env.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME }}/${{ env.SERVICE_NAME }}:${{ github.sha }}
 
-      - name: Push Docker Image to GCR
-        run: |
-          docker push gcr.io/your-gcp-project-id/codessa-devos:latest
+          # If your Dockerfile is not at the root, specify the source directory.
+          # source: ./app
 
-      - name: Deploy to Cloud Run
-        run: |
-          gcloud run deploy codessa-devos \
-            --image gcr.io/your-gcp-project-id/codessa-devos:latest \
-            --platform managed \
-            --region us-central1 \
-            --allow-unauthenticated
-      - name: Clean up
-        run: |
-          docker rmi gcr.io/your-gcp-project-id/codessa-devos:latest  
-          gcloud container images delete gcr.io/your-gcp-project-id/codessa-devos:latest --force-delete-tags --quiet
-          gcloud run services delete codessa-devos --quiet
-          gcloud run services update codessa-devos --clear-annotations --quiet
-          gcloud run services update codessa-devos --clear-labels --quiet
-          gcloud run services update codessa-devos --clear-traffic --quiet
-          gcloud run services delete codessa-devos --quiet
+          # Optional: Pass environment variables to the Cloud Run service from GitHub secrets.
+          # env_vars: |
+          #   GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+          #   ANOTHER_VAR=some_value
 
+      - name: Show Deployed URL
+        run: echo "✅ Successfully deployed to ${{ steps.deploy.outputs.url }}"
 
-      - name: Notify Deployment Success
-        run: |
-          echo "Deployment to Cloud Run successful!"  
-          # Optionally, you can add a notification step here, e.g., sending a message to Slack or email. 
-          # For example, using a Slack webhook:
-          # curl -X POST -H 'Content-type: application/json' --data '{"text": "Deployment to Cloud Run successful!"}' https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK
-          # Or using GitHub Actions notifications:
-          # gh issue create --title "Deployment Successful" --body "The deployment to Cloud Run was successful!" --repo your-github-username/your-repo-name
-          # Make sure to replace the webhook URL with your actual Slack webhook URL or GitHub repository details.
-          # You can also use GitHub Actions notifications or any other notification service you prefer.
-          # Ensure you have the necessary permissions and configurations set up for notifications.
-          # For example, you can use a GitHub Action to send a notification to Slack or email.
-          # This step is optional and can be customized based on your notification preferences.
-          # You can also use GitHub Actions notifications or any other notification service you prefer.
-          # Ensure you have the necessary permissions and configurations set up for notifications.
-          # For example, you can use a GitHub Action to send a notification to Slack or email.
+      - name: Send Slack Notification on Success
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          # Make sure the secret 'SLACK_WEBHOOK' exists in your repository or environment.
+          SLACK_TITLE: "✅ Deployment Successful: ${{ env.SERVICE_NAME }}"
+          SLACK_USERNAME: "Codessa Deploy Bot"
+          SLACK_ICON_EMOJI: ":rocket:"
+          SLACK_COLOR: "good"
+          SLACK_MESSAGE: "A new version of *${{ env.SERVICE_NAME }}* has been deployed to production. Visit at ${{ steps.deploy.outputs.url }}"
+          SLACK_ICON_EMOJI: ":rocket:"
+          SLACK_COLOR: "good"
+          SLACK_MESSAGE: "A new version of *${{ env.SERVICE_NAME }}* has been deployed to production. Visit at ${{ steps.deploy.outputs.url }}"
