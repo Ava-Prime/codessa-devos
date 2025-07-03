@@ -1,0 +1,95 @@
+# Core
+streamlit
+python-dotenv
+requests
+uuid
+
+# Google Cloud SDKs
+google-cloud-firestore
+google-cloud-secret-manager
+google-cloud-aiplatform
+google-cloud-storage
+google-auth
+google-cloud-bigquery
+
+# Web Frameworks & API Clients
+fastapi
+flask
+notion-client
+httpx
+
+# Data Science & Machine Learning
+pandas
+numpy
+matplotlib
+seaborn
+plotly
+altair
+scikit-learn
+pyspark
+dask
+pyarrow
+streamz
+
+# Dashboards & Interactive Visualizations
+bokeh
+dash
+
+#Developer Tools & Testing
+pytest
+black
+selenium
+pre-commit
+
+# Web Scraping & Parsing
+beautifulsoup4
+lxml
+
+# Databases, Caching & Connectivity
+sqlalchemy
+sqlalchemy-utils
+pyodbc
+pymongo
+redis
+redis-py
+elasticsearch
+
+# Authentication & Security
+cryptography
+
+# Asynchronous Tasks & Streaming
+apache-airflow
+celery
+celery[redis]
+celery[redis,amqp]
+celery[redis,amqp,database]
+kafka-python
+
+# Configuration, Logging & Environment Management
+dynaconf
+loguru
+pyyaml
+
+# Data Versioning & Governance
+dvc
+datahub
+
+# Data Validation & Serialization
+marshmallow
+pydantic
+pydantic[email]
+pydantic[email,http]
+pydantic[email,http,json]
+pydantic[email,http,json,yaml]
+pydantic[email,http,json,yaml,xml]
+pydantic[email,http,json,yaml,xml,csv]
+pydantic[email,http,json,yaml,xml,csv,toml]
+pydantic[email,http,json,yaml,xml,csv,toml,jinja2]
+pydantic[email,http,json,yaml,xml,csv,toml,jinja2,sqlalchemy]
+pydantic[email,http,json,yaml,xml,csv,toml,jinja2,sqlalchemy,redis]
+pydantic[email,http,json,yaml,xml,csv,toml,jinja2,sqlalchemy,redis,elasticsearch]
+
+# Deployment & Interactive Development
+jupyterlab
+pandas-profiling
+tqdm
