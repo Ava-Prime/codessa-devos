@@ -1,0 +1,84 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Environments
+.env
+.env.*
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+terraform.tfvars
+
+# Google credentials
+*.json
+service-account/
+
+# VSCode
+.vscode/
+
+# Streamlit
+.streamlit/secrets.toml
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# Local configuration files
+*.local
+# Logs
+*.log
+# Coverage reports
+*.coverage
+# Backup files
+*.bak
+# Temporary files
+*.tmp
+# IDE specific files
+.idea/
+# MacOS specific files
+.DS_Store
+# Windows specific files
+Thumbs.db
+# Linux specific files
+*~
+# Archive files
+*.zip
+# Documentation
+*.md
+# Miscellaneous
+*.swp
+# Ignore all files in the service-account directory
+service-account/*
+# Ignore all files in the .terraform directory
+.terraform/*
+# Ignore all files in the .streamlit directory
+.streamlit/*
+# Ignore all files in the .vscode directory
+.vscode/*
+# Ignore all files in the .ipynb_checkpoints directory
+.ipynb_checkpoints
+# Ignore all files in the .idea directory
+.idea/* 
+# Ignore all files in the .coverage directory
+.coverage
+# Ignore all files in the .local directory
+*.local
+# Ignore all files in the .tmp directory
+*.tmp
+# Ignore all files in the .bak directory
+*.bak
+# Ignore all files in the .log directory
+*.log
+# Ignore all files in the .zip directory
+*.zip
+# Ignore all files in the .swp directory
+*.swp
+# Ignore all files in the .DS_Store directory
+.DS_Store
+# Ignore all files in the Thumbs.db directory
+Thumbs.db
+# Ignore all files in the *~ directory
+*~
+

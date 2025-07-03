@@ -1,0 +1,148 @@
+# Core
+streamlit
+python-dotenv
+requests
+uuid
+
+# Google Cloud
+google-cloud-firestore
+google-cloud-secret-manager
+google-cloud-aiplatform
+google-cloud-storage
+google-auth
+google-cloud-bigquery
+
+# Web frameworks & APIs
+fastapi
+flask
+notion-client
+httpx
+
+# Data Science & ML
+pandas
+numpy
+matplotlib
+seaborn
+plotly
+altair
+scikit-learn
+pyspark
+dask
+pyarrow
+streamz
+
+# Visualization & Dashboards
+bokeh
+dash
+
+# Dev & Testing
+pytest
+black
+selenium
+
+# Web Scraping & Parsing
+beautifulsoup4
+lxml
+
+# Databases & Caching
+sqlalchemy
+redis
+
+# Auth & Security
+cryptography
+
+# Task Scheduling & Workflow
+apache-airflow
+celery
+kafka-python
+
+# Data Management & Governance Tools
+dvc
+datahub
+
+# Configuration & Logging
+dynaconf
+loguru
+
+# API Docs & Clients
+openapi-core
+marshmallow
+
+# Interactive & Notebook Tools
+jupyterlab
+pandas-profiling
+
+# Containerization & Deployment
+docker
+
+# Additional useful utilities
+httpx
+tqdm
+
+# Optional: For specific use cases
+
+# Database connectivity
+pyodbc
+
+# Data interchange and serialization
+pyarrow
+
+# Configuration files support
+pyyaml
+
+# Data validation and settings management
+pydantic
+
+# Pydantic optional features (install these as needed)
+pydantic[email]
+pydantic[email,http]
+pydantic[email,http,json]
+pydantic[email,http,json,yaml]
+pydantic[email,http,json,yaml,xml]
+pydantic[email,http,json,yaml,xml,csv]
+pydantic[email,http,json,yaml,xml,csv,toml]
+pydantic[email,http,json,yaml,xml,csv,toml,jinja2]
+pydantic[email,http,json,yaml,xml,csv,toml,jinja2,sqlalchemy]
+pydantic[email,http,json,yaml,xml,csv,toml,jinja2,sqlalchemy,redis]
+pydantic[email,http,json,yaml,xml,csv,toml,jinja2,sqlalchemy,redis,elasticsearch]
+
+# Additional SQLAlchemy utilities
+sqlalchemy-utils
+
+# MongoDB connectivity
+pymongo
+
+# Redis connectivity (alternative naming)
+redis-py
+
+# Elasticsearch client
+elasticsearch
+
+# Kafka connectivity
+kafka-python
+
+# Celery with extra brokers support
+celery[redis]
+celery[redis,amqp]
+celery[redis,amqp,database]
+
+
+
+pip install pre-commit
+pre-commit install
+# Optional: For specific data processing tasks
+# Apache Spark
+pip install pyspark 
+# Dask for parallel computing
+pip install dask    
+# PyArrow for columnar data processing
+pip install pyarrow
+# Streamz for streaming data processing
+pip install streamz
+# Optional: For specific visualization tasks
+# Dash for web-based dashboards
+dash
+# Plotly for interactive plots
+plotly
+
+# Bokeh for interactive visualizations

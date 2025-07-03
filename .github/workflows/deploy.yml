@@ -1,0 +1,65 @@
+name: Deploy to Cloud Run
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          service_account_key: ${{ secrets.GCP_SA_KEY }}
+          project_id: your-gcp-project-id
+
+      - name: Configure Docker for GCR
+        run: gcloud auth configure-docker
+
+      - name: Build Docker Image
+        run: |
+          docker build -t gcr.io/your-gcp-project-id/codessa-devos:latest .
+
+      - name: Push Docker Image to GCR
+        run: |
+          docker push gcr.io/your-gcp-project-id/codessa-devos:latest
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy codessa-devos \
+            --image gcr.io/your-gcp-project-id/codessa-devos:latest \
+            --platform managed \
+            --region us-central1 \
+            --allow-unauthenticated
+      - name: Clean up
+        run: |
+          docker rmi gcr.io/your-gcp-project-id/codessa-devos:latest  
+          gcloud container images delete gcr.io/your-gcp-project-id/codessa-devos:latest --force-delete-tags --quiet
+          gcloud run services delete codessa-devos --quiet
+          gcloud run services update codessa-devos --clear-annotations --quiet
+          gcloud run services update codessa-devos --clear-labels --quiet
+          gcloud run services update codessa-devos --clear-traffic --quiet
+          gcloud run services delete codessa-devos --quiet
+
+
+      - name: Notify Deployment Success
+        run: |
+          echo "Deployment to Cloud Run successful!"  
+          # Optionally, you can add a notification step here, e.g., sending a message to Slack or email. 
+          # For example, using a Slack webhook:
+          # curl -X POST -H 'Content-type: application/json' --data '{"text": "Deployment to Cloud Run successful!"}' https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK
+          # Or using GitHub Actions notifications:
+          # gh issue create --title "Deployment Successful" --body "The deployment to Cloud Run was successful!" --repo your-github-username/your-repo-name
+          # Make sure to replace the webhook URL with your actual Slack webhook URL or GitHub repository details.
+          # You can also use GitHub Actions notifications or any other notification service you prefer.
+          # Ensure you have the necessary permissions and configurations set up for notifications.
+          # For example, you can use a GitHub Action to send a notification to Slack or email.
+          # This step is optional and can be customized based on your notification preferences.
+          # You can also use GitHub Actions notifications or any other notification service you prefer.
+          # Ensure you have the necessary permissions and configurations set up for notifications.
+          # For example, you can use a GitHub Action to send a notification to Slack or email.
