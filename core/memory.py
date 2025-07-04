@@ -57,7 +57,11 @@ def list_all_scrolls() -> List[Dict]:
 def get_scroll_by_id(scroll_id: str) -> Dict:
     doc_ref = db.collection("scrolls").document(scroll_id)
     doc = doc_ref.get()
-    return doc.to_dict() | {"id": doc.id} if doc.exists else {}
+    doc_dict = doc.to_dict()
+    if doc.exists and doc_dict is not None:
+        return doc_dict | {"id": doc.id}
+    else:
+        return {}
 # === Memory Cortex: GET BY AGENT ID ===
 def get_scrolls_by_agent_id(agent_id: str) -> List[Dict]:
     query = db.collection("scrolls").where("agent_id", "==", agent_id)
@@ -79,7 +83,7 @@ def get_scrolls_by_agent_id_and_phase(agent_id: str, phase: str) -> List[Dict]:
     )
     return [doc.to_dict() | {"id": doc.id} for doc in query.stream()]
 # === Memory Cortex: GET BY AGENT ID AND STATUS ===
-def get_scrolls_by_agent_id_and_status(agent_id: str, status: str) ->
+# def get_scrolls_by_agent_id_and_status(agent_id: str, status: str) ->
 def get_scrolls_by_agent_id_and_status(agent_id: str, status: str) -> List[Dict]:
     query = (
         db.collection("scrolls")

@@ -1,17 +1,57 @@
-# services/firestore_client.py
+"""
+Firestore client for Ava's Memory Cortex.
+
+Provides CRUD operations for Firestore collections such as 'scrolls' and
+'agents'.
+"""
 
 import os
 import uuid
-from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional
 
 from google.cloud import firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
 
+
 class FirestoreClient:
     """
-    A client for interacting with the Firestore database for Ava's Memory Cortex.
+    FirestoreClient provides a high-level interface for interacting with Google Firestore
+    for Ava's Memory Cortex. It supports generic CRUD operations as well as collection-
+    specific methods for managing "scrolls" and "agents".
+
+    Features:
+        - Initialization with Google Cloud project ID from environment variable.
+        - Generic methods for adding, retrieving, and listing documents in any collection.
+        - Collection-specific helpers for "scrolls" (conversations, events) and "agents" (AI personas).
+        - Automatic handling of document IDs, timestamps, and basic error reporting.
+        - Example usage and tests included in the main block.
+
+    Attributes:
+        project_id (str): The Google Cloud project ID.
+        db (firestore.Client): The Firestore client instance.
+
+    Methods:
+        add(collection_name, data, doc_id=None):
+            Adds a new document to the specified collection.
+        get(collection_name, doc_id):
+            Retrieves a document by ID from the specified collection.
+        list(collection_name, filters=None, limit=100):
+            Lists documents in a collection with optional filters and limit.
+        add_scroll(prompt, response, **kwargs):
+            Adds a new "scroll" document with prompt, response, and optional metadata.
+        get_scroll(scroll_id):
+            Retrieves a "scroll" document by its ID.
+        add_agent(name, role, description, **kwargs):
+            Adds a new "agent" document with a slugified ID.
+        get_agent(agent_id):
+            Retrieves an "agent" document by its ID.
+
+    Usage:
+        Instantiate FirestoreClient after authenticating with Google Cloud and setting
+        the GOOGLE_CLOUD_PROJECT environment variable. Use the provided methods to
+        interact with Firestore collections for Ava's Memory Cortex.
     """
+
     def __init__(self):
         """
         Initializes the Firestore client.
@@ -19,42 +59,60 @@ class FirestoreClient:
         """
         self.project_id = os.environ.get("GOOGLE_CLOUD_PROJECT")
         if not self.project_id:
-            raise ValueError("GOOGLE_CLOUD_PROJECT environment variable not set.")
-        
+            raise ValueError(
+                "GOOGLE_CLOUD_PROJECT environment variable not set."
+            )
+
         # Initialize the Firestore DB client
         self.db = firestore.Client(project=self.project_id)
-        print(f"✅ FirestoreClient initialized for project: {self.project_id}")
+        print(
+            f"✅ FirestoreClient initialized for project: {self.project_id}"
+        )
 
     # --- Generic CRUD Methods ---
 
-    def add(self, collection_name: str, data: Dict[str, Any], doc_id: Optional[str] = None) -> Dict[str, Any]:
+    def add(
+        self,
+        collection_name: str,
+        data: Dict[str, Any],
+        doc_id: Optional[str] = None
+    ) -> Dict[str, Any]:
         """
         Adds a new document to a specified collection.
 
         Args:
             collection_name: The name of the collection.
             data: A dictionary containing the data for the new document.
-            doc_id: Optional. The ID for the document. If not provided, a UUID is generated.
+            doc_id: Optional. The ID for the document. If not provided, a UUID
+                is generated.
 
         Returns:
-            The full document data, including the ID and created_at timestamp.
+            The full document data, including the ID and created_at
+            timestamp.
         """
+        # Current implementation lacks retry logic for transient failures
         doc_id = doc_id or str(uuid.uuid4())
         doc_ref = self.db.collection(collection_name).document(doc_id)
-        
+
         # Add server timestamp and ID to the data
         data['created_at'] = firestore.SERVER_TIMESTAMP
         data['id'] = doc_id
-        
+
         doc_ref.set(data)
-        
+
         # To return the full data with the resolved timestamp, we get it back
         # Note: This adds a slight delay but ensures consistency.
         created_doc = doc_ref.get().to_dict()
-        print(f"📄 Added document '{doc_id}' to collection '{collection_name}'.")
-        return created_doc
+        print(
+            f"📄 Added document '{doc_id}' to collection '{collection_name}'."
+        )
+        return created_doc or {}
 
-    def get(self, collection_name: str, doc_id: str) -> Optional[Dict[str, Any]]:
+    def get(
+        self,
+        collection_name: str,
+        doc_id: str
+    ) -> Optional[Dict[str, Any]]:
         """
         Retrieves a document from a collection by its ID.
 
@@ -68,26 +126,37 @@ class FirestoreClient:
         doc_ref = self.db.collection(collection_name).document(doc_id)
         doc = doc_ref.get()
         if doc.exists:
-            print(f"📄 Retrieved document '{doc_id}' from collection '{collection_name}'.")
+            print(
+                f"📄 Retrieved document '{doc_id}' from "
+                f"collection '{collection_name}'."
+            )
             return doc.to_dict()
-        else:
-            print(f"⚠️ Document '{doc_id}' not found in collection '{collection_name}'.")
-            return None
+        print(
+            f"⚠️ Document '{doc_id}' not found in collection '{collection_name}'."
+        )
+        return None
 
-    def list(self, collection_name: str, filters: Optional[List[tuple]] = None, limit: int = 100) -> List[Dict[str, Any]]:
+    def list(
+        self,
+        collection_name: str,
+        filters: Optional[List[tuple]] = None,
+        limit: int = 100
+    ) -> List[Dict[str, Any]]:
         """
         Lists documents in a collection, with optional filtering.
 
         Args:
             collection_name: The name of the collection.
-            filters: A list of tuples for filtering, e.g., [("status", "==", "active")].
+            filters: A list of tuples for filtering, e.g.,
+                [("status", "==", "active")].
             limit: The maximum number of documents to return.
 
         Returns:
             A list of dictionaries, where each dictionary is a document.
         """
+        # Current implementation doesn't support pagination
         query = self.db.collection(collection_name)
-        
+
         if filters:
             for f in filters:
                 try:
@@ -99,19 +168,28 @@ class FirestoreClient:
 
         docs = query.limit(limit).stream()
         results = [doc.to_dict() for doc in docs]
-        print(f"📄 Listed {len(results)} documents from collection '{collection_name}'.")
+        print(
+            f"📄 Listed {len(results)} documents from collection "
+            f"'{collection_name}'."
+        )
         return results
 
     # --- Collection-Specific Methods for SCROLLS ---
 
-    def add_scroll(self, prompt: str, response: str, **kwargs) -> Dict[str, Any]:
+    def add_scroll(
+        self,
+        prompt: str,
+        response: str,
+        **kwargs
+    ) -> Dict[str, Any]:
         """
         Adds a new 'scroll' document.
 
         Args:
             prompt: The user prompt or event trigger.
             response: The assistant's response.
-            **kwargs: Additional fields for the scroll document (e.g., summary, topics).
+            **kwargs: Additional fields for the scroll document (e.g., summary,
+                topics).
 
         Returns:
             The newly created scroll document as a dictionary.
@@ -130,12 +208,26 @@ class FirestoreClient:
         return self.add("scrolls", scroll_data)
 
     def get_scroll(self, scroll_id: str) -> Optional[Dict[str, Any]]:
-        """Retrieves a scroll by its ID."""
+        """
+        Retrieves a scroll by its ID.
+
+        Args:
+            scroll_id: The ID of the scroll document.
+
+        Returns:
+            The scroll document as a dictionary, or None if not found.
+        """
         return self.get("scrolls", scroll_id)
 
     # --- Collection-Specific Methods for AGENTS ---
-    
-    def add_agent(self, name: str, role: str, description: str, **kwargs) -> Dict[str, Any]:
+
+    def add_agent(
+        self,
+        name: str,
+        role: str,
+        description: str,
+        **kwargs
+    ) -> Dict[str, Any]:
         """
         Adds a new 'agent' document. The document ID will be a slugified version of the name.
 
@@ -150,7 +242,6 @@ class FirestoreClient:
         """
         # Create a URL-friendly slug from the name for the ID
         agent_id = name.lower().replace(" ", "-").replace("_", "-")
-
         agent_data = {
             "name": name,
             "description": description,
@@ -162,17 +253,26 @@ class FirestoreClient:
         return self.add("agents", agent_data, doc_id=agent_id)
 
     def get_agent(self, agent_id: str) -> Optional[Dict[str, Any]]:
-        """Retrieves an agent by its ID (slug)."""
+        """
+        Retrieves an agent by its ID (slug).
+
+        Args:
+            agent_id: The ID (slug) of the agent document.
+
+        Returns:
+            The agent document as a dictionary, or None if not found.
+        """
         return self.get("agents", agent_id)
 
-# Example usage (for testing purposes)
+
 if __name__ == "__main__":
+    # Example usage (for testing purposes).
     # Ensure you have run 'gcloud auth application-default login'
-    # and set 'GOOGLE_CLOUD_PROJECT'
+    # and set 'GOOGLE_CLOUD_PROJECT'.
     try:
         client = FirestoreClient()
         print("\n--- Testing FirestoreClient ---")
-        
+
         # Test Agent Creation
         print("\n1. Testing Agent Creation...")
         ava_prime_data = {
@@ -184,11 +284,12 @@ if __name__ == "__main__":
         }
         agent_doc = client.add_agent(**ava_prime_data)
         print("   ✅ Created Agent:", agent_doc.get('name'))
-        
+
         retrieved_agent = client.get_agent(agent_doc['id'])
         assert retrieved_agent is not None
         assert retrieved_agent['name'] == "Ava Prime"
-        print(f"   ✅ Retrieved Agent: {retrieved_agent['name']} with ID: {retrieved_agent['id']}")
+        print(f"   ✅ Retrieved Agent: {retrieved_agent['name']} "
+              f"with ID: {retrieved_agent['id']}")
 
         # Test Scroll Creation
         print("\n2. Testing Scroll Creation...")
@@ -208,7 +309,11 @@ if __name__ == "__main__":
 
         # Test Listing
         print("\n3. Testing Listing Scrolls...")
-        active_scrolls = client.list("scrolls", filters=[("status", "==", "active")], limit=5)
+        active_scrolls = client.list(
+            "scrolls",
+            filters=[("status", "==", "active")],
+            limit=5
+        )
         print(f"   ✅ Found {len(active_scrolls)} active scrolls.")
         assert len(active_scrolls) > 0
 
